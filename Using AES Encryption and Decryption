@@ -1,0 +1,68 @@
+using System;
+using System.Security.Cryptography;
+using System.Text;
+
+class Program
+{
+    static void Main()
+    {
+        string textToEncrypt = "This is a secret message.";
+        byte[] key = Encoding.UTF8.GetBytes("my_secret_key_123");
+
+        using (Aes aesAlg = Aes.Create())
+        {
+            aesAlg.Key = key;
+            byte[] encrypted = EncryptStringToBytes_Aes(textToEncrypt, aesAlg.Key, aesAlg.IV);
+
+            Console.WriteLine("Encrypted Message: " + Convert.ToBase64String(encrypted));
+
+            string decrypted = DecryptStringFromBytes_Aes(encrypted, aesAlg.Key, aesAlg.IV);
+            Console.WriteLine("Decrypted Message: " + decrypted);
+        }
+    }
+
+    static byte[] EncryptStringToBytes_Aes(string plainText, byte[] Key, byte[] IV)
+    {
+        using (Aes aesAlg = Aes.Create())
+        {
+            aesAlg.Key = Key;
+            aesAlg.IV = IV;
+
+            ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
+
+            using (var msEncrypt = new System.IO.MemoryStream())
+            {
+                using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                {
+                    using (var swEncrypt = new System.IO.StreamWriter(csEncrypt))
+                    {
+                        swEncrypt.Write(plainText);
+                    }
+                    return msEncrypt.ToArray();
+                }
+            }
+        }
+    }
+
+    static string DecryptStringFromBytes_Aes(byte[] cipherText, byte[] Key, byte[] IV)
+    {
+        using (Aes aesAlg = Aes.Create())
+        {
+            aesAlg.Key = Key;
+            aesAlg.IV = IV;
+
+            ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+
+            using (var msDecrypt = new System.IO.MemoryStream(cipherText))
+            {
+                using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                {
+                    using (var srDecrypt = new System.IO.StreamReader(csDecrypt))
+                    {
+                        return srDecrypt.ReadToEnd();
+                    }
+                }
+            }
+        }
+    }
+}
